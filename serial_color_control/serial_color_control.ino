@@ -62,25 +62,18 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v)
     return (rgb_color){r, g, b};
 }
 
-byte byteRead;
-const byte hue_bytes = 2;
- byte input_hue[hue_bytes];
 void loop()
 {
   /*  check if data has been sent from the computer: */
   if (Serial.available()) {
-    
-    uint16_t val = Serial.parseInt();
-//     val = ((long )input_hue[0]) << 8;
-//    val |= input_hue[1];
-    if(val >= 0 && byteRead < 360) {
-      hue = val;
+    hue = Serial.parseInt();
+    if(hue >= 0 && hue < 360) {
       rgb_color rgb = hsvToRgb(hue, 255, 255);
       for(uint16_t i = 0; i < ledCount; i++) {
         leds[i] = rgb;
       }
       ledStrip.write(leds, ledCount, brightness);
     }
-    Serial.println(val);
+    Serial.println(hue);
   }
 }
