@@ -32,13 +32,10 @@ class KodeFunHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 				print("here!" + "\n")
 				hex_color = self.path[self.path.index('=') + 1:]
 				print("hex_color: " + str(hex_color) + "\n")
-				SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
 				color = get_rgb_from_hex(hex_color)
 				print(color)
-				hsv = rgbToHsv(color[0], color[1], color[2])
-				hue = int(round(scaleHue(hsv[0])))
-				print("hue: " + str(hue) + "\n")
-				ser.write(str(hue))
+				ser.write(str(color[0]) + "," + str(color[1]) + "," + str(color[2]) + "\n")
+				SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
 				return
 			# if self.path.endswith('.html'):
 			f = open('./' + self.path) #open requested file
