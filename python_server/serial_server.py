@@ -31,9 +31,12 @@ def get_rgb_from_hex(hex_color):
 	return (red, green, blue)
 
 def run_process(filename):
+	print("############ running process ###########")
 	bashCommand = "/Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/avrdude -C/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf -v -patmega328p -carduino -P/dev/cu.usbmodemfa131 -b115200 -D -Uflash:w:/Users/matt/src/leds/python_server/" + filename + ":i"
-	process = subprocess.Popen(bashCommand.split())#, stdout=subprocess.PIPE)
+	# /Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/avrdude -C/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf -v -patmega328p -carduino -P/dev/cu.usbmodemfa131 -b115200 -D -Uflash:w:/var/folders/k9/f3jfm9l51wj4z6j350w5w_800000gn/T/build1561620600180326105.tmp/pulse.cpp.hex:i 
 
+	process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+	print("############ done running process ###########")
  
 #Create custom HTTPRequestHandler class
 class KodeFunHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
@@ -43,10 +46,6 @@ class KodeFunHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 		print("doing get...")
 		print("path: " + str(self.path))
 		try:
-			if self.path == '/blue.html':
-				ser.write('200')
-			if self.path == '/red.html':
-				ser.write('0')
 			if '/index.html?hex_color=' in self.path:
 				print("here!" + "\n")
 				hex_color = self.path[self.path.index('=') + 1:]
@@ -62,9 +61,11 @@ class KodeFunHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 				filename = urllib.unquote(filename).decode('utf8') 
 				print("filename: " + filename + "\n")
 				run_process(filename)
-				# ser.write(str(color[0]) + "," + str(color[1]) + "," + str(color[2]) + "\n")
 				# SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
-				return
+				# return
+			if('?' in self.path):
+				self.path = self.path[:self.path.index('?')]
+			print("path: " + self.path)
 			# if self.path.endswith('.html'):
 			f = open('./' + self.path) #open requested file
 			html = f.read()
@@ -73,6 +74,9 @@ class KodeFunHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 				for fname in filenames:
 					print("fname: " + fname + "||||")
 					html = html + get_form(fname)
+				html = html + """"
+					</body>
+					</html>"""
 			
 
 			#send code 200 response
@@ -85,6 +89,7 @@ class KodeFunHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 			#send file content to client
 			self.wfile.write(html)
 			f.close()
+			print("done doing get...")
 			return
 
 		except IOError:
