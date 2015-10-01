@@ -1,5 +1,9 @@
 import serial
 from rgb_to_hsv import rgbToHsv, scaleHue
+import glob
+import subprocess
+import urllib
+
 ser = serial.Serial('/dev/cu.usbmodemfa131', 9600)
 
 #!/usr/bin/env python
@@ -9,6 +13,16 @@ import SocketServer
 import os
 import cgi
 
+# creates an html form object that submits "program=<filename>" as parameter
+def get_form(filename):
+	html_result = """
+		<form action="/index.html" method="GET">
+			<input name="program" value=\""""  + filename + """\" />
+			<input type="submit" value="Submit"/>
+		</form>
+		"""
+	return html_result
+
 def get_rgb_from_hex(hex_color):
 	red = int(hex_color[:2], 16)
 	green = int(hex_color[2:4], 16)
@@ -16,13 +30,18 @@ def get_rgb_from_hex(hex_color):
 	# print("r: " + str(red) + "g: " + str(green) + "b: " + str(blue))
 	return (red, green, blue)
 
+def run_process(filename):
+	bashCommand = "/Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/avrdude -C/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf -v -patmega328p -carduino -P/dev/cu.usbmodemfa131 -b115200 -D -Uflash:w:/Users/matt/src/leds/python_server/" + filename + ":i"
+	process = subprocess.Popen(bashCommand.split())#, stdout=subprocess.PIPE)
+
  
 #Create custom HTTPRequestHandler class
 class KodeFunHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
-
   
 	#handle GET command
 	def do_GET(self):
+		print("doing get...")
+		print("path: " + str(self.path))
 		try:
 			if self.path == '/blue.html':
 				ser.write('200')
@@ -37,10 +56,24 @@ class KodeFunHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 				ser.write(str(color[0]) + "," + str(color[1]) + "," + str(color[2]) + "\n")
 				SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
 				return
+			if '/index.html?program=' in self.path:
+				print("loading program!" + "\n")
+				filename = self.path[self.path.index('=') + 1:]
+				filename = urllib.unquote(filename).decode('utf8') 
+				print("filename: " + filename + "\n")
+				run_process(filename)
+				# ser.write(str(color[0]) + "," + str(color[1]) + "," + str(color[2]) + "\n")
+				# SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
+				return
 			# if self.path.endswith('.html'):
 			f = open('./' + self.path) #open requested file
-			# else:
-			# 	print("didn't initialize f :(\n")
+			html = f.read()
+			if '/index.html' in self.path:
+				filenames = glob.glob("hex_files/*.hex")
+				for fname in filenames:
+					print("fname: " + fname + "||||")
+					html = html + get_form(fname)
+			
 
 			#send code 200 response
 			self.send_response(200)
@@ -50,26 +83,12 @@ class KodeFunHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 			self.end_headers()
 
 			#send file content to client
-			self.wfile.write(f.read())
+			self.wfile.write(html)
 			f.close()
 			return
 
 		except IOError:
 		  self.send_error(404, 'file not found')
-
-
-
-	    # CITATION: http://stackoverflow.com/questions/4233218/python-basehttprequesthandler-post-variables
-	 #    ctype, pdict = cgi.parse_header(self.headers['content-type'])
-	 #    if ctype == 'multipart/form-data':
-	 #        postvars = cgi.parse_multipart(self.rfile, pdict)
-	 #    elif ctype == 'application/x-www-form-urlencoded':
-	 #        length = int(self.headers['content-length'])
-	 #        postvars = cgi.parse_qs(self.rfile.read(length), keep_blank_values=1)
-	 #    else:
-	 #        postvars = {}
-		# print("postvars: " + str(postvars))
-		# SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
 
 
 
@@ -84,15 +103,6 @@ class KodeFunHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 			postvars = {}
 		print("postvars: " + str(postvars) + "\n")
 
-
-		# form = cgi.FieldStorage(
-  #           fp=self.rfile,
-  #           headers=self.headers,
-  #           environ={'REQUEST_METHOD':'POST',
-  #                    'CONTENT_TYPE':self.headers['Content-Type'],
-  #                    })
-		# for item in form.list:
-		# 	print(str(item) + "\n")
 		SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
 	  
 def run():
