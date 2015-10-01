@@ -1,0 +1,25 @@
+bash script to upload compiled hex file to arduino (assumes .hex file is at /Users/matt/src/leds/python_server/hex_files/):
+
+/Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/avrdude -C/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf -v -patmega328p -carduino -P/dev/cu.usbmodemfa131 -b115200 -D -Uflash:w:/Users/matt/src/leds/python_server/hex_files/<hex_file_name>:i 
+
+
+Examples:
+
+/Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/avrdude -C/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf -v -patmega328p -carduino -P/dev/cu.usbmodemfa131 -b115200 -D -Uflash:w:/Users/matt/src/leds/python_server/hex_files/entire_rainbow.cpp.hex:i 
+
+/Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/avrdude -C/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf -v -patmega328p -carduino -P/dev/cu.usbmodemfa131 -b115200 -D -Uflash:w:/Users/matt/src/leds/python_server/hex_files/pulse.cpp.hex:i 
+
+
+==========================
+in python:
+
+import subprocess
+
+bashCommand = “/Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/avrdude -C/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf -v -patmega328p -carduino -P/dev/cu.usbmodemfa131 -b115200 -D -Uflash:w:/Users/matt/src/leds/python_server/hex_files/<hex_file_name>:i”
+
+process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+
+
+
+
+

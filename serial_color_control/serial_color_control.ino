@@ -12,7 +12,7 @@
 #include <APA102.h>
 
 // Define which pins to use.
-const uint8_t dataPin = 11;
+const uint8_t dataPin = 8;
 const uint8_t clockPin = 12;
 
 // Create an object for writing to the LED strip.
@@ -62,18 +62,31 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v)
     return (rgb_color){r, g, b};
 }
 
+rgb_color rgb;
+
+
 void loop()
 {
   /*  check if data has been sent from the computer: */
-  if (Serial.available()) {
-    hue = Serial.parseInt();
-    if(hue >= 0 && hue < 360) {
-      rgb_color rgb = hsvToRgb(hue, 255, 255);
+  while (Serial.available() > 0) {
+      rgb.red = Serial.parseInt();
+      rgb.green = Serial.parseInt();
+      rgb.blue = Serial.parseInt();
+      // look for the newline. That's the end of your
+    // sentence:
+    if (Serial.read() == '\n') {
+//    hue = Serial.parseInt();
+//    if(hue >= 0 && hue < 360) {
+//      rgb_color rgb = hsvToRgb(hue, 255, 255);
       for(uint16_t i = 0; i < ledCount; i++) {
         leds[i] = rgb;
       }
       ledStrip.write(leds, ledCount, brightness);
+    
+    Serial.println(rgb.red);
+    Serial.println(rgb.green);
+    Serial.println(rgb.blue);
     }
-    Serial.println(hue);
+    
   }
 }

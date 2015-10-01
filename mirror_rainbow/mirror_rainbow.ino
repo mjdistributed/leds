@@ -12,7 +12,7 @@
 #include <APA102.h>
 
 // Define which pins to use.
-const uint8_t dataPin = 11;
+const uint8_t dataPin = 8;
 const uint8_t clockPin = 12;
 
 // Create an object for writing to the LED strip.
@@ -26,7 +26,6 @@ rgb_color leds[ledCount];
 
 // Set the brightness to use (the maximum is 31).
 const uint16_t brightness = 20;
-const uint16_t num_hues = 360;
 
 uint16_t mid = 0;
 

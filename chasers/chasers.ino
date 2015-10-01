@@ -13,7 +13,7 @@
 #include <APA102.h>
 
 // Define which pins to use.
-const uint8_t dataPin = 11;
+const uint8_t dataPin = 8;
 const uint8_t clockPin = 12;
 
 // Create an object for writing to the LED strip.

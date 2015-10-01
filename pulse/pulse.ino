@@ -25,15 +25,22 @@ const uint16_t ledCount = 240;
 rgb_color leds[ledCount];
 
 // Set the brightness to use (the maximum is 31).
-const uint16_t brightness = 20;
-const uint16_t num_hues = 360;
+const byte brightness_max = 20;
+const byte brightness_min = 5;
+float brightness = 15;
 
-uint16_t mid = 0;
-uint8_t rate_of_change = 1;
+// hue in [0, 359]
+const uint16_t hue = 180;
+const rgb_color color = hsvToRgb(hue, 255, 255);
+
+// true if decreasing in brightness, false if increasing
+boolean decreasing = true;
 
 void setup()
 {
-  Serial.begin(9600);
+  for(uint16_t i = 0; i < ledCount; i++) {
+    leds[i] = color;
+  }
 }
 
 // Converts a color from HSV to RGB.
@@ -60,25 +67,18 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v)
     return (rgb_color){r, g, b};
 }
 
-void loop()
-{
-  mid += rate_of_change;
-  if(mid > 720) {
-    mid = 0;
-  }
-  for(uint16_t i = 0; i < ledCount; i++) {
-    int16_t minus_1 = mid - i;
-    int16_t minus_2 = i - mid;
-    uint16_t minimum;
-      minimum = min(abs(minus_1), abs(minus_2));
-    if (mid >= 360) {
-      int16_t minus_3 = 720 - mid + i;
-      minimum = min(abs(minus_3), minimum);
-    }
-    uint16_t val = 360 - minimum;
-    if(val == 360)
-      val = 359;
-    leds[i] = hsvToRgb(val, 255, 255);
-  }
-  ledStrip.write(leds, ledCount, brightness);
+const float rate_of_change = 0.5;
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  if(decreasing)
+    brightness -= rate_of_change;
+  else
+    brightness += rate_of_change;
+  if(brightness >= brightness_max)
+    decreasing = true;
+  if(brightness <= brightness_min)
+    decreasing = false;
+  byte brightness_int = round(brightness);
+  ledStrip.write(leds, ledCount, brightness_int);
 }
