@@ -38,34 +38,32 @@ class CustomHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 		print("doing get...")
 		print("path: " + str(self.path))
 		try:
-			if '?hex_color=' in self.path:
-				print("here!" + "\n")
-				hex_color = self.path[self.path.index('=') + 1:]
-				print("hex_color: " + str(hex_color) + "\n")
-				color = get_rgb_from_hex(hex_color)
-				print(color)
-				ser.write(str(color[0]) + "," + str(color[1]) + "," + str(color[2]) + "\n")
-				SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
-				return
-			if '?program=' in self.path:
-				filename = self.path[self.path.index('=') + 1:]
-				filename = urllib.unquote(filename).decode('utf8') 
-				run_process(filename)
-			if('?' in self.path):
-				self.path = self.path[:self.path.index('?')]
-			print("path: " + self.path)
-
-			#### construct returned html
-			# f = open('./index.html')
-			# html = f.read()
-			# add buttons for running programs
-			programs_html = "<form action='/' method='GET'>\n"
-			filenames = glob.glob("hex_files/*.hex")
-			for fname in filenames:
-				program_name = fname[fname.index('/') + 1 : fname.index('.cpp')]
-				programs_html = programs_html + pb.get_form(fname, program_name)
-			html = pb.get_html(programs_html)
-			print(html)
+			html = ""
+			if "." in self.path and not '?' in self.path:
+				# load static files as needed
+				f = open("." + self.path)
+				html = f.read()
+				f.close()
+			else:
+				# generate dynamic html result
+				if '?hex_color=' in self.path:
+					hex_color = self.path[self.path.index('=') + 1:]
+					color = get_rgb_from_hex(hex_color)
+					ser.write(str(color[0]) + "," + str(color[1]) + "," + str(color[2]) + "\n")
+				if '?program=' in self.path:
+					filename = self.path[self.path.index('=') + 1:]
+					filename = urllib.unquote(filename).decode('utf8') 
+					run_process(filename)
+				if('?' in self.path):
+					self.path = self.path[:self.path.index('?')]
+				#### construct returned html
+				# add buttons for running programs
+				programs_html = "<form action='/' method='GET'>\n"
+				filenames = glob.glob("hex_files/*.hex")
+				for fname in filenames:
+					program_name = fname[fname.index('/') + 1 : fname.index('.cpp')]
+					programs_html = programs_html + pb.get_form(fname, program_name)
+				html = pb.get_html(programs_html)
 
 			#send code 200 response
 			self.send_response(200)
@@ -76,7 +74,6 @@ class CustomHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 			#send file content to client
 			self.wfile.write(html)
-			# f.close()
 			print("done doing get...")
 			return
 

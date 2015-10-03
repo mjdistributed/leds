@@ -27,8 +27,8 @@ def get_html(programs_html):
   <body>
     <div class="container">
 	  	<div class="starter-template">
-		    <h1>Hello, world!</h1>
-		    <form action="/index.html" method="GET">
+		    <h1>leds!</h1>
+		    <form action="/" method="GET">
 				  <input name="hex_color" class="color" value="66ff00"/>
 				  <input type="submit" value="Submit"/>
 			</form>
@@ -36,13 +36,14 @@ def get_html(programs_html):
 			""" + programs_html + """
 		</div>
 	</div> <!-- /container -->
-  </body>
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <!-- Latest compiled and minified JavaScript -->
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-	<script type="text/javascript" src="jscolor/jscolor.js"></script> <!-- color picket -->
+	<!-- color picker -->
+	<script type="text/javascript" src="/jscolor/jscolor.js"></script> 
+	</body>
  </html>"""
 	return html
 
