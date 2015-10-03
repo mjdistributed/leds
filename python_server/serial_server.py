@@ -17,13 +17,14 @@ import os
 import cgi
 
 # creates an html form object that submits "program=<filename>" as parameter
-def get_form(filename):
-	html_result = """
-		<form action="/index.html" method="GET">
-			<input name="program" value=\""""  + filename + """\" />
-			<input type="submit" value="Submit"/>
-		</form>
-		"""
+def get_form(path, program_name):
+	# html_result = """
+	# 	<form action="/index.html" method="GET">
+	# 		<input name="program" value=\""""  + filename + """\" />
+	# 		<input type="submit" value="Submit"/>
+	# 	</form>
+	# 	"""
+	html_result = "<button type=\"submit\" name=\"program\" value=\"" + path + "\">" + program_name + "</button><br/>"
 	return html_result
 
 def get_rgb_from_hex(hex_color):
@@ -73,11 +74,15 @@ class CustomHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 			f = open('./' + self.path) #open requested file
 			html = f.read()
 			if '/index.html' in self.path:
+				html += "<form action='index.html' method='GET'>\n"
 				filenames = glob.glob("hex_files/*.hex")
 				for fname in filenames:
-					print("fname: " + fname + "||||")
-					html = html + get_form(fname)
-				html = html + """"
+					program_name = fname[fname.index('/') + 1 : fname.index('.cpp')]
+					html = html + get_form(fname, program_name)
+				html = html + """
+					</form>
+					</div>
+					</div> <!-- /.container -->
 					</body>
 					</html>"""
 			
