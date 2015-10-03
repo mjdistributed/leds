@@ -42,7 +42,7 @@ def run_process(filename):
 	print("############ done running process ###########")
  
 #Create custom HTTPRequestHandler class
-class KodeFunHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class CustomHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
   
 	#handle GET command
 	def do_GET(self):
@@ -119,7 +119,7 @@ def run():
   #ip and port of servr <- IP set dynamically
   #by default http server port is 80
   server_address = ('', 8080)
-  httpd = SocketServer.TCPServer(server_address, KodeFunHTTPRequestHandler)
+  httpd = SocketServer.TCPServer(server_address, CustomHTTPRequestHandler)
   print('http server is running...')
   httpd.serve_forever()
   
