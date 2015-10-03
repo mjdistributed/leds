@@ -1,31 +1,20 @@
 import serial
-from rgb_to_hsv import rgbToHsv, scaleHue
 import glob
 import subprocess
 import urllib
+import SimpleHTTPServer
+import SocketServer
+import os
+import cgi
+
+from rgb_to_hsv import rgbToHsv, scaleHue
+import page_builder as pb
 
 port = '/dev/cu.usbmodemfa131'  # usb port left-bottom (away from screen)
 # port = '/dev/cu.usbmodemfd121' # usb port left-top (toward screen)
 
 ser = serial.Serial(port, 9600)
 
-#!/usr/bin/env python
- 
-import SimpleHTTPServer
-import SocketServer
-import os
-import cgi
-
-# creates an html form object that submits "program=<filename>" as parameter
-def get_form(path, program_name):
-	# html_result = """
-	# 	<form action="/index.html" method="GET">
-	# 		<input name="program" value=\""""  + filename + """\" />
-	# 		<input type="submit" value="Submit"/>
-	# 	</form>
-	# 	"""
-	html_result = "<button type=\"submit\" name=\"program\" value=\"" + path + "\">" + program_name + "</button><br/>"
-	return html_result
 
 def get_rgb_from_hex(hex_color):
 	red = int(hex_color[:2], 16)
@@ -37,7 +26,6 @@ def get_rgb_from_hex(hex_color):
 def run_process(filename):
 	print("############ running process ###########")
 	bashCommand = "/Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/avrdude -C/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf -v -patmega328p -carduino -P" + port + " -b115200 -D -Uflash:w:/Users/matt/src/leds/python_server/" + filename + ":i"
-	# /Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/avrdude -C/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf -v -patmega328p -carduino -P/dev/cu.usbmodemfa131 -b115200 -D -Uflash:w:/var/folders/k9/f3jfm9l51wj4z6j350w5w_800000gn/T/build1561620600180326105.tmp/pulse.cpp.hex:i 
 
 	process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 	print("############ done running process ###########")
@@ -50,7 +38,7 @@ class CustomHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 		print("doing get...")
 		print("path: " + str(self.path))
 		try:
-			if '/index.html?hex_color=' in self.path:
+			if '?hex_color=' in self.path:
 				print("here!" + "\n")
 				hex_color = self.path[self.path.index('=') + 1:]
 				print("hex_color: " + str(hex_color) + "\n")
@@ -59,33 +47,25 @@ class CustomHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 				ser.write(str(color[0]) + "," + str(color[1]) + "," + str(color[2]) + "\n")
 				SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
 				return
-			if '/index.html?program=' in self.path:
-				print("loading program!" + "\n")
+			if '?program=' in self.path:
 				filename = self.path[self.path.index('=') + 1:]
 				filename = urllib.unquote(filename).decode('utf8') 
-				print("filename: " + filename + "\n")
 				run_process(filename)
-				# SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
-				# return
 			if('?' in self.path):
 				self.path = self.path[:self.path.index('?')]
 			print("path: " + self.path)
-			# if self.path.endswith('.html'):
-			f = open('./' + self.path) #open requested file
-			html = f.read()
-			if '/index.html' in self.path:
-				html += "<form action='index.html' method='GET'>\n"
-				filenames = glob.glob("hex_files/*.hex")
-				for fname in filenames:
-					program_name = fname[fname.index('/') + 1 : fname.index('.cpp')]
-					html = html + get_form(fname, program_name)
-				html = html + """
-					</form>
-					</div>
-					</div> <!-- /.container -->
-					</body>
-					</html>"""
-			
+
+			#### construct returned html
+			# f = open('./index.html')
+			# html = f.read()
+			# add buttons for running programs
+			programs_html = "<form action='/' method='GET'>\n"
+			filenames = glob.glob("hex_files/*.hex")
+			for fname in filenames:
+				program_name = fname[fname.index('/') + 1 : fname.index('.cpp')]
+				programs_html = programs_html + pb.get_form(fname, program_name)
+			html = pb.get_html(programs_html)
+			print(html)
 
 			#send code 200 response
 			self.send_response(200)
@@ -96,7 +76,7 @@ class CustomHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 			#send file content to client
 			self.wfile.write(html)
-			f.close()
+			# f.close()
 			print("done doing get...")
 			return
 
