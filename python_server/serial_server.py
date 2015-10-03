@@ -4,7 +4,10 @@ import glob
 import subprocess
 import urllib
 
-ser = serial.Serial('/dev/cu.usbmodemfa131', 9600)
+port = '/dev/cu.usbmodemfa131'  # usb port left-bottom (away from screen)
+# port = '/dev/cu.usbmodemfd121' # usb port left-top (toward screen)
+
+ser = serial.Serial(port, 9600)
 
 #!/usr/bin/env python
  
@@ -32,7 +35,7 @@ def get_rgb_from_hex(hex_color):
 
 def run_process(filename):
 	print("############ running process ###########")
-	bashCommand = "/Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/avrdude -C/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf -v -patmega328p -carduino -P/dev/cu.usbmodemfa131 -b115200 -D -Uflash:w:/Users/matt/src/leds/python_server/" + filename + ":i"
+	bashCommand = "/Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/avrdude -C/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf -v -patmega328p -carduino -P" + port + " -b115200 -D -Uflash:w:/Users/matt/src/leds/python_server/" + filename + ":i"
 	# /Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/avrdude -C/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf -v -patmega328p -carduino -P/dev/cu.usbmodemfa131 -b115200 -D -Uflash:w:/var/folders/k9/f3jfm9l51wj4z6j350w5w_800000gn/T/build1561620600180326105.tmp/pulse.cpp.hex:i 
 
 	process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)

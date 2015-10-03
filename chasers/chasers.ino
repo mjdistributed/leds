@@ -23,8 +23,8 @@ APA102<dataPin, clockPin> ledStrip;
 const uint16_t ledCount = 240;
 
 const uint16_t brightness = 10; // 0 - 31
-const byte num_chasers = 5;
-const byte chaser_width = 10;
+const byte num_chasers = 1;
+const byte chaser_width = 80;
 
 // "back" positions of each chaser
 uint16_t on_leds[num_chasers];
@@ -70,5 +70,5 @@ void loop()
     leds[to_write_pos].blue = 255;
   }
   ledStrip.write(leds, ledCount, brightness);
-  delay(10);
+  delay(20);
 }
