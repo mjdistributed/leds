@@ -32,6 +32,9 @@ def get_html(programs_html):
 				  <input name="hex_color" class="color" value="66ff00"/>
 				  <input type="submit" value="Submit"/>
 			</form>
+			<form action="/" method="GET">
+				brightness: (0-20) <input type="text" name="brightness">
+			</form>
 			<br/>
 			""" + programs_html + """
 		</div>

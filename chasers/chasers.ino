@@ -1,5 +1,3 @@
-
-
 /* This example shows how to display a moving rainbow pattern on
  * an APA102-based LED strip. */
 
@@ -11,6 +9,7 @@
  #include <FastGPIO.h>
  #define APA102_USE_FAST_GPIO
 #include <APA102.h>
+#include "mattLED.h"
 
 // Define which pins to use.
 const uint8_t dataPin = 8;
@@ -22,7 +21,7 @@ APA102<dataPin, clockPin> ledStrip;
 // Set the number of LEDs to control.
 const uint16_t ledCount = 240;
 
-const uint16_t brightness = 10; // 0 - 31
+uint16_t brightness = 10; // 0 - 31
 const byte num_chasers = 1;
 const byte chaser_width = 80;
 
@@ -33,8 +32,10 @@ uint16_t on_leds[num_chasers];
 rgb_color leds[ledCount];
 
 
+
 void setup()
 {
+  Serial.begin(9600);
   for(int i = 0; i < num_chasers; i++) {
     on_leds[i] = i * ledCount / (num_chasers);
     for(int j = 0; j < chaser_width && on_leds[i] + j < ledCount; j++) {
@@ -44,11 +45,13 @@ void setup()
     }
   }
   ledStrip.write(leds, ledCount, brightness);
-//  delay(3000);
 }
 
 void loop()
 {
+
+  brightness = brightness_control(brightness);
+  
   for(int i = 0; i < num_chasers; i++) {
     leds[on_leds[i]].red = 0;
     leds[on_leds[i]].green = 0;

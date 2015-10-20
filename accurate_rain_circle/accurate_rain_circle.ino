@@ -10,6 +10,7 @@
  #define APA102_USE_FAST_GPIO
 
 #include <APA102.h>
+#include "mattLED.h"
 
 // Define which pins to use.
 const uint8_t dataPin = 8;
@@ -25,7 +26,7 @@ const uint16_t ledCount = 240;
 rgb_color leds[ledCount];
 
 // Set the brightness to use (the maximum is 31).
-const uint16_t brightness = 20;
+uint16_t brightness = 20;
 //uint16_t zero = 0;
 double zero = 0.0;
 float rate_of_change = 0.3;
@@ -38,16 +39,6 @@ float leds_per_degree = greatest_degree * 1.0 / circle_width;
 
 void setup()
 {
-  // testing red->violet difference
-//  leds[0] = hsvToRgb(3, 255, 255);
-//  leds[1] = hsvToRgb(2, 255, 255);
-//  leds[2] = hsvToRgb(1, 255, 255);
-//  leds[3] = hsvToRgb(0, 255, 255);
-//  leds[4] = hsvToRgb(359, 255, 255);
-//  leds[5] = hsvToRgb(358, 255, 255);
-//  leds[6] = hsvToRgb(357, 255, 255);
-//  ledStrip.write(leds, ledCount, brightness);
-//  delay(5000);
   Serial.begin(9600); 
 }
 
@@ -77,7 +68,8 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v)
 
 void loop()
 {
-
+  brightness = brightness_control(brightness);
+  
   zero += rate_of_change; // TODO: rename "zero" to "zero"
   if(zero > circle_width) {
     zero = 0;

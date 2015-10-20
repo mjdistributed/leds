@@ -1,4 +1,5 @@
 #include "FastLED.h"
+#include "mattLED_fastLED.h"
 
 // How many leds in your strip?
 #define NUM_LEDS 240
@@ -12,8 +13,7 @@
 CRGB leds[NUM_LEDS];
 
 void setup() { 
-	Serial.begin(57600);
-	Serial.println("resetting");
+  Serial.begin(9600);
 	FastLED.addLeds<CHIPSET, DATA_PIN, CLOCK_PIN, COLOR_ORDER>(leds, NUM_LEDS);
 	LEDS.setBrightness(84);
 }
@@ -25,6 +25,9 @@ void fadeall() {
 }
 
 void loop() { 
+
+  brightness_control_fastLED();
+  
 	static uint8_t hue = 0;
 	Serial.print("x");
 	// First slide the led in one direction

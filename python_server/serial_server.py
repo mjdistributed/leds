@@ -30,6 +30,14 @@ def run_process(filename):
 	process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 	print("############ done running process ###########")
  
+def protected_serial_write(data):
+	""" Required: data - String """
+	try:
+		ser.write(data)
+	except IOError:
+		print("Error writing to serial output")
+
+
 #Create custom HTTPRequestHandler class
 class CustomHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
   
@@ -40,16 +48,27 @@ class CustomHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 		try:
 			html = ""
 			if "." in self.path and not '?' in self.path:
+				print("loading static file: " + self.path)
 				# load static files as needed
 				f = open("." + self.path)
 				html = f.read()
 				f.close()
 			else:
+				dynamic_html = ""
 				# generate dynamic html result
+				if '?brightness' in self.path:
+					brightness = int(self.path[self.path.index('=') + 1:])
+					print("brightness: " + str(brightness))
+					if(brightness < 0 or brightness > 20):
+						dynamic_html += """<div class="alert alert-warning" role="alert">
+			            	Brightness must be between 0 and 20.</div>"""
+					else:
+						protected_serial_write(str(brightness) + "\n");
+						print("setting brightness to: " + str(brightness))
 				if '?hex_color=' in self.path:
 					hex_color = self.path[self.path.index('=') + 1:]
 					color = get_rgb_from_hex(hex_color)
-					ser.write(str(color[0]) + "," + str(color[1]) + "," + str(color[2]) + "\n")
+					protected_serial_write(str(color[0]) + "," + str(color[1]) + "," + str(color[2]) + "\n")
 				if '?program=' in self.path:
 					filename = self.path[self.path.index('=') + 1:]
 					filename = urllib.unquote(filename).decode('utf8') 
@@ -58,12 +77,12 @@ class CustomHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 					self.path = self.path[:self.path.index('?')]
 				#### construct returned html
 				# add buttons for running programs
-				programs_html = "<form action='/' method='GET'>\n"
+				dynamic_html += "<form action='/' method='GET'>\n"
 				filenames = glob.glob("hex_files/*.hex")
 				for fname in filenames:
 					program_name = fname[fname.index('/') + 1 : fname.index('.cpp')]
-					programs_html = programs_html + pb.get_form(fname, program_name)
-				html = pb.get_html(programs_html)
+					dynamic_html = dynamic_html + pb.get_form(fname, program_name)
+				html = pb.get_html(dynamic_html)
 
 			#send code 200 response
 			self.send_response(200)
@@ -79,31 +98,22 @@ class CustomHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 		except IOError:
 		  self.send_error(404, 'file not found')
-
-
-
-	def do_POST(self):
-		ctype, pdict = cgi.parse_header(self.headers['content-type'])
-		if ctype == 'multipart/form-data':
-			postvars = cgi.parse_multipart(self.rfile, pdict)
-		elif ctype == 'application/x-www-form-urlencoded':
-			length = int(self.headers['content-length'])
-			postvars = cgi.parse_qs(self.rfile.read(length), keep_blank_values=1)
-		else:
-			postvars = {}
-		print("postvars: " + str(postvars) + "\n")
-
-		SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
 	  
 def run():
-  print('http server is starting...')
+  	print('http server is starting...')
  
-  #ip and port of servr <- IP set dynamically
-  #by default http server port is 80
-  server_address = ('', 8080)
-  httpd = SocketServer.TCPServer(server_address, CustomHTTPRequestHandler)
-  print('http server is running...')
-  httpd.serve_forever()
+
+  	#ip and port of servr <- IP set dynamically
+  	#by default http server port is 80
+  	server_address = ('', 8080)
+  	httpd = SocketServer.TCPServer(server_address, CustomHTTPRequestHandler)
+  	print('http server is running...')
+	try:
+  		httpd.serve_forever()
+	except KeyboardInterrupt:
+		pass
+	print("closing server")
+	httpd.server_close()
   
 if __name__ == '__main__':
   run()

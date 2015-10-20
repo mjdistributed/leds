@@ -10,6 +10,7 @@
  #define APA102_USE_FAST_GPIO
 
 #include <APA102.h>
+#include "mattLED.h"
 
 // Define which pins to use.
 const uint8_t dataPin = 8;
@@ -25,7 +26,7 @@ const uint16_t ledCount = 240;
 rgb_color leds[ledCount];
 
 // Set the brightness to use (the maximum is 31).
-const uint16_t brightness = 20;
+uint16_t brightness = 20;
 const uint16_t num_hues = 360;
 
 uint16_t mid = 0;
@@ -62,6 +63,8 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v)
 
 void loop()
 {
+  brightness = brightness_control(brightness);
+  
   mid += rate_of_change;
   if(mid > 720) {
     mid = 0;

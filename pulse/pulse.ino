@@ -10,6 +10,7 @@
  #define APA102_USE_FAST_GPIO
 
 #include <APA102.h>
+#include "mattLED.h"
 
 // Define which pins to use.
 const uint8_t dataPin = 8;
@@ -25,8 +26,8 @@ const uint16_t ledCount = 240;
 rgb_color leds[ledCount];
 
 // Set the brightness to use (the maximum is 31).
-const byte brightness_max = 20;
-const byte brightness_min = 5;
+int brightness_max = 20;
+const byte brightness_min = 3;
 float brightness = 15;
 
 // hue in [0, 359]
@@ -38,6 +39,7 @@ boolean decreasing = true;
 
 void setup()
 {
+  Serial.begin(9600);
   for(uint16_t i = 0; i < ledCount; i++) {
     leds[i] = color;
   }
@@ -67,18 +69,24 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v)
     return (rgb_color){r, g, b};
 }
 
-const float rate_of_change = 0.5;
+const float rate_of_change = 0.15;
 
 void loop() {
+  brightness_max = brightness_control(brightness_max);
+  
   // put your main code here, to run repeatedly:
   if(decreasing)
     brightness -= rate_of_change;
   else
     brightness += rate_of_change;
-  if(brightness >= brightness_max)
+  if(brightness >= brightness_max) {
+    brightness = brightness_max;
     decreasing = true;
-  if(brightness <= brightness_min)
+  }
+  if(brightness <= brightness_min) {
+    brightness = brightness_min;
     decreasing = false;
+  }
   byte brightness_int = round(brightness);
   ledStrip.write(leds, ledCount, brightness_int);
 }
