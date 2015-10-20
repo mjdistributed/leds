@@ -26,8 +26,8 @@ MAX_TAP_BLOCKS = 0.15/INPUT_BLOCK_TIME
 
 NUM_SAMPLES_TO_AVERAGE = 1000
 
-port = '/dev/cu.usbmodemfa131'  # usb port left-bottom (away from screen)
-ser = serial.Serial(port, 9600)
+# port = '/dev/cu.usbmodemfa131'  # usb port left-bottom (away from screen)
+# ser = serial.Serial(port, 9600)
 # port = '/dev/cu.usbmodemfd121' # usb port left-top (toward screen)
 
 
@@ -45,7 +45,9 @@ def frequency_analysis(block):
     format = "%dh"%(count)
     print("format: " + format)
     data = np.array(list(struct.unpack(format, block)))
-    power = 20*np.log10(np.abs(np.fft.rfft(data[:2048])))
+    data_Left = data[::2]
+    data_Right = data[1::2]
+    power = 20*np.log10(np.abs(np.fft.rfft(data_Left[:2048])))
     frequency = np.linspace(0, RATE/2.0, len(power))
     pl.plot(frequency, power)
     pl.xlabel("Frequency(Hz)")
@@ -56,12 +58,17 @@ def get_power_for_frequency(block, low_freq, high_freq):
     count = len(block)/2
     format = "%dh"%(count)
     data = np.array(list(struct.unpack(format, block)))
-    power = 20*np.log10(np.abs(np.fft.rfft(data[:2048])))
+    data_Left = data[::2]
+    data_Right = data[1::2]
+    power = 20*np.log10(np.abs(np.fft.rfft(data_Left)))
     frequency = np.linspace(0, RATE/2.0, len(power))
+    # print(len(power))
+    # print(len(frequency))
     total_power = 0
     count = 0
     for i in range(0, len(frequency)):
         if(frequency[i] >= low_freq and frequency[i] <= high_freq):
+            # print("here: " + str(frequency[i]))
             total_power += power[i]
             count += 1
         elif(frequency[i] > high_freq):
@@ -147,7 +154,7 @@ class Listener(object):
         # amplitude = get_rms( block )
 
         frequency_analysis(block)
-        amplitude = get_power_for_frequency(block, 0, 100)
+        amplitude = get_power_for_frequency(block, 430, 450)
         return
         # print("found amplitude: " + str(amplitude))
 
@@ -162,13 +169,13 @@ class Listener(object):
         print("amplitude: " + str(amplitude))
         # print("threshold: " + str(self.threshold))
 
-        if amplitude / self.average_amplitude > RATIO_THRESHOLD: #DELTA_THRESHOLD:
+        # if amplitude / self.average_amplitude > RATIO_THRESHOLD: #DELTA_THRESHOLD:
             # noisy block
-            ser.write("20" + "\n")    
+            # ser.write("20" + "\n")    
         
-        else:            
+        # else:            
             # quiet block.
-            ser.write("0" + "\n")
+            # ser.write("0" + "\n")
 
 if __name__ == "__main__":
     tt = Listener()
