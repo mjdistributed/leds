@@ -1,3 +1,20 @@
+#!/usr/bin/python
+
+### Control the LED strip via serial communication
+# for use with serial_control.ino
+
+import pyaudio
+import struct
+import math
+import serial
+import time
+
+
+
+
+
+
+
 #!/usr/bin/env python
 # Modified from code by Yu-Jie Lin
 
@@ -19,6 +36,18 @@ CHANNELS = 2
 RATE = 22050
 INPUT_BLOCK_TIME = 0.05
 INPUT_FRAMES_PER_BLOCK = int(RATE*INPUT_BLOCK_TIME)
+
+port = '/dev/cu.usbmodemfa131'  # usb port left-bottom (away from screen)
+# port = '/dev/cu.usbmodemfd121' # usb port left-top (toward screen)
+ser = serial.Serial(port, 9600)
+
+def write_leds():
+    for i in range(60):
+        # TODO: speed up by writing bytes: ie ser.write(bytes)
+        ser.write("255,00,00")
+        print("acknowledgement: " + str(ser.readline()))
+    # print("end")
+    exit()
 
 def get_avg_power_in_range(high, freqs, Y):
   """ [0 - high) """
@@ -95,5 +124,16 @@ def main():
 
 
 if __name__ == '__main__':
-  main()
+    # clear anything in the buffer
+    ser.flushInput()
+    ser.flushOutput()   
+
+    # Arduino resets when new serial connection is opened, so wait
+    # for this process to complete
+    time.sleep(3)
+
+    while(True):
+        write_leds()
+    
+    main()
   

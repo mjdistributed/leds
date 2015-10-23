@@ -70,7 +70,7 @@ void loop()
 {
   brightness = brightness_control(brightness);
   
-  zero += rate_of_change; // TODO: rename "zero" to "zero"
+  zero += rate_of_change;
   if(zero > circle_width) {
     zero = 0;
   }

@@ -6,15 +6,15 @@ import pyaudio
 import struct
 import math
 import serial
-import pylab as pl
-import numpy as np
+import time
 
 # DELTA_THRESHOLD = 0.02
 RATIO_THRESHOLD = 1.1
 FORMAT = pyaudio.paInt16 
 SHORT_NORMALIZE = (1.0/32768.0)
 CHANNELS = 2
-RATE = 44100  
+# RATE = 44100  
+RATE = 22050
 INPUT_BLOCK_TIME = 0.05
 INPUT_FRAMES_PER_BLOCK = int(RATE*INPUT_BLOCK_TIME)
 # if we get this many noisy blocks in a row, increase the threshold
@@ -24,58 +24,17 @@ UNDERSENSITIVE = 120
 # if the noise was longer than this many blocks, it's not a 'tap'
 MAX_TAP_BLOCKS = 0.15/INPUT_BLOCK_TIME
 
-NUM_SAMPLES_TO_AVERAGE = 1000
+NUM_SAMPLES_TO_AVERAGE = 2000
 
-# port = '/dev/cu.usbmodemfa131'  # usb port left-bottom (away from screen)
-# ser = serial.Serial(port, 9600)
+MIN_BRIGHTNESS = 1
+MAX_BRIGHTNESS = 20
+
+port = '/dev/cu.usbmodemfa131'  # usb port left-bottom (away from screen)
+ser = serial.Serial(port, 9600)
+
 # port = '/dev/cu.usbmodemfd121' # usb port left-top (toward screen)
 
-
-
-
-def plot_test(block):
-    count = len(block)/2
-    format = "%dh"%(count)
-    print("format: " + format)
-    data = np.array(list(struct.unpack(format, block)))
-    time = np.arange(len(data))*1.0/RATE
-    pl.plot(time, data)
-    pl.show()
-
-def frequency_analysis(block):
-    count = len(block)/2
-    format = "%dh"%(count)
-    print("format: " + format)
-    data = np.array(list(struct.unpack(format, block)))
-    data_Left = data[::2]
-    data_Right = data[1::2]
-    power = 20*np.log10(np.abs(np.fft.rfft(data_Left[:2048])))
-    frequency = np.linspace(0, RATE/2.0, len(power))
-    pl.plot(frequency, power)
-    pl.xlabel("Frequency(Hz)")
-    pl.ylabel("Power(dB)")
-    pl.show()
-
-def get_power_for_frequency(block, low_freq, high_freq):
-    count = len(block)/2
-    format = "%dh"%(count)
-    data = np.array(list(struct.unpack(format, block)))
-    data_Left = data[::2]
-    data_Right = data[1::2]
-    power = 20*np.log10(np.abs(np.fft.rfft(data_Left)))
-    frequency = np.linspace(0, RATE/2.0, len(power))
-    # print(len(power))
-    # print(len(frequency))
-    total_power = 0
-    count = 0
-    for i in range(0, len(frequency)):
-        if(frequency[i] >= low_freq and frequency[i] <= high_freq):
-            # print("here: " + str(frequency[i]))
-            total_power += power[i]
-            count += 1
-        elif(frequency[i] > high_freq):
-            break
-    return (total_power * 1.0 / count)
+mid_brightness = (MAX_BRIGHTNESS + MIN_BRIGHTNESS) / 2
 
 def get_rms( block ):
     # RMS amplitude is defined as the square root of the 
@@ -87,10 +46,8 @@ def get_rms( block ):
     # two chars in the string.
     count = len(block)/2
     format = "%dh"%(count)
-    print("format: " + format)
     shorts = struct.unpack( format, block )
 
-    # print("shorts: " + str(shorts))
     # iterate over the block.
     sum_squares = 0.0
     for sample in shorts:
@@ -111,6 +68,7 @@ class Listener(object):
         self.total_amplitude = 0
         self.average_amplitude = 0
         self.num_samples = 0
+        self.brightness = mid_brightness
 
     def stop(self):
         self.stream.close()
@@ -144,6 +102,15 @@ class Listener(object):
 
         return stream
 
+    def get_brightness(self, amplitude):
+        brightness = self.brightness
+        if amplitude / self.average_amplitude > RATIO_THRESHOLD:
+            # noisy block            
+            brightness = mid_brightness + int(mid_brightness * (1 - self.average_amplitude / amplitude))
+        elif self.average_amplitude / amplitude > RATIO_THRESHOLD:
+            brightness = mid_brightness - int(mid_brightness * (1 - amplitude / self.average_amplitude))
+        return brightness
+
     def listen(self):
         try:
             block = self.stream.read(INPUT_FRAMES_PER_BLOCK)
@@ -153,33 +120,17 @@ class Listener(object):
             print( "(%d) Error recording: %s"%(self.errorcount,e) )
             self.noisycount = 1
             return
-        # amplitude = get_rms( block )
 
-        frequency_analysis(block)
-        amplitude = get_power_for_frequency(block, 430, 450)
-        return
-        # print("found amplitude: " + str(amplitude))
-
+        amplitude = get_rms( block )
         self.total_amplitude += amplitude
         self.num_samples += 1
         self.average_amplitude = self.total_amplitude / self.num_samples
         if(self.num_samples > NUM_SAMPLES_TO_AVERAGE):
             self.num_samples = 0
             self.total_amplitude = self.average_amplitude
-        print("average amplitude: " + str(self.average_amplitude))
 
-        print("amplitude: " + str(amplitude))
-        # print("threshold: " + str(self.threshold))
-
-        # if amplitude / self.average_amplitude > RATIO_THRESHOLD: #DELTA_THRESHOLD:
-            # noisy block
-            # ser.write("20" + "\n")    
-        
-        # else:            
-            # quiet block.
-            # ser.write("0" + "\n")
-
-
+        self.brightness = self.get_brightness(amplitude)
+        ser.write(str(self.brightness) + "\n")
 
 if __name__ == "__main__":
     tt = Listener()
