@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ### Control the LED strip via serial communication
-# for use with serial_control.ino
+# for use with serial_control.ino and serial_individual_brightness_control.ino
 
 import pyaudio
 import struct
@@ -16,7 +16,7 @@ import time
 
 
 #!/usr/bin/env python
-# Modified from code by Yu-Jie Lin
+# 
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,6 +27,7 @@ import wave
 import pylab as pl
 
 
+### Audio Sampling Constants
 # nFFT = 512
 nFFT = 1024
 BUF_SIZE = 4 * nFFT
@@ -37,17 +38,69 @@ RATE = 22050
 INPUT_BLOCK_TIME = 0.05
 INPUT_FRAMES_PER_BLOCK = int(RATE*INPUT_BLOCK_TIME)
 
+### LED Serial Communication Constants
+NUM_LEDS = 200
 port = '/dev/cu.usbmodemfa131'  # usb port left-bottom (away from screen)
 # port = '/dev/cu.usbmodemfd121' # usb port left-top (toward screen)
 ser = serial.Serial(port, 9600)
 
-def write_leds():
-    for i in range(60):
-        # TODO: speed up by writing bytes: ie ser.write(bytes)
-        ser.write("255,00,00")
-        print("acknowledgement: " + str(ser.readline()))
-    # print("end")
-    exit()
+MAX_BRIGHTNESS = 20
+
+
+def normalize(collection, MAX_VALUE):
+  """ Normalizes all items in collection to be in [0, MAX_VALUE] """
+  """ assumes collection is linearly distributed """
+
+  # print("collection: " + str(collection))
+  max_amplitude = max(collection)
+  min_amplitude = min(collection)
+  # print("max: " + str(max_amplitude))
+  new_collection = list()
+  for i in range(len(collection)):
+    item = (collection[i] - min_amplitude) / (max_amplitude - min_amplitude)
+    # print("item: " + str(item))
+    new_collection.append(item)
+  # print("new collection: " + str(new_collection))
+  # exit(-1)
+  normalized = map(lambda x: (x - min_amplitude) / (max_amplitude - min_amplitude), collection)
+  # exit(-1)
+  print("\nnormalized: " + str(normalized))
+  return map(lambda x: int(x * MAX_VALUE), normalized)
+
+def write_leds_brightness(amplitudes):
+  """ Map amplitudes to brightness for each LED. """
+  """ For use with serial_individual_brightness_control.ino """
+
+  # compress amplitudes to be NUM_LEDS wide
+  buckets = [0] * NUM_LEDS
+  print("num buckets: " + str(len(buckets)))
+  print("num amplitudes: " + str(len(amplitudes)))
+  # exit()
+  freqs_per_bucket = int(math.ceil(len(amplitudes) * 1.0 / NUM_LEDS))
+  print(amplitudes)
+  for i in range(len(amplitudes)):
+    # truncate to find current bucket
+    bucket_index = i / freqs_per_bucket
+    # print("bucket index: " + str(bucket_index))
+    # print(amplitudes[i])
+    buckets[bucket_index] = amplitudes[i]
+  buckets = normalize(buckets, MAX_BRIGHTNESS)
+  # print("normalized: " + str(buckets))
+  print("\n\nwriting: " + str(buckets))
+  # exit()
+  # write instructions to microcontroler
+  for i in range(NUM_LEDS):
+    ser.write(str(buckets[i]))
+    print("acknowledgement: " + str(ser.readline()))
+
+def write_leds_color():
+  """ For use with serial_control.ino """
+  for i in range(NUM_LEDS):
+      # TODO: speed up by writing bytes: ie ser.write(bytes)
+      ser.write("255,00,00")
+      print("acknowledgement: " + str(ser.readline()))
+  # print("end")
+  exit()
 
 def get_avg_power_in_range(high, freqs, Y):
   """ [0 - high) """
@@ -67,10 +120,8 @@ def get_avg_power_in_range(high, freqs, Y):
 
 # X goes from -XXXX to +XXXX
 def get_power(stream, MAX_y):
+  """ Modified from code by Yu-Jie Lin """
 
-  # Read n*nFFT frames from stream, n > 0
-  # N = max(stream.get_read_available() / nFFT, 1) * nFFT
-  # data = stream.read(N)
   data = stream.read(INPUT_FRAMES_PER_BLOCK)
 
   # Unpack data, LRLRLR...
@@ -88,7 +139,7 @@ def get_power(stream, MAX_y):
 
 
 def main():
-
+  """ Modified from code by Yu-Jie Lin """
   p = pyaudio.PyAudio()
 
   # Frequency range
@@ -107,12 +158,15 @@ def main():
                 input=True,
                 frames_per_buffer=BUF_SIZE)
         Y = get_power(stream, MAX_y)
-        pl.plot(x_f, Y)
-        pl.xlabel("Frequency(Hz)")
-        pl.ylabel("Power(dB)")
-        pl.show()
-        # brightness = map_power_to_brightness()
-        print("power in low interval: " + str(get_avg_power_in_range(100, x_f, Y)))
+        # pl.plot(x_f, Y)
+        # pl.xlabel("Frequency(Hz)")
+        # pl.ylabel("Power(dB)")
+        # pl.show()
+        print("Y: " + str(Y[:50]))
+        print("Y end: " + str(Y[len(Y) - 50:-1]))
+        write_leds_brightness(Y)
+
+        # print("power in low interval: " + str(get_avg_power_in_range(100, x_f, Y)))
       except IOError, e:
         print("Error recording: %s"%e)
   except KeyboardInterrupt:
@@ -132,8 +186,8 @@ if __name__ == '__main__':
     # for this process to complete
     time.sleep(3)
 
-    while(True):
-        write_leds()
+    # while(True):
+    #     write_leds()
     
     main()
   
