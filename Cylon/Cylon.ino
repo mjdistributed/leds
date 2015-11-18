@@ -29,7 +29,6 @@ void loop() {
   brightness_control_fastLED();
   
 	static uint8_t hue = 0;
-	Serial.print("x");
 	// First slide the led in one direction
 	for(int i = 0; i < NUM_LEDS; i++) {
 		// Set the i'th led to red 
@@ -40,9 +39,8 @@ void loop() {
 		// leds[i] = CRGB::Black;
 		fadeall();
 		// Wait a little bit before we loop around and do it again
-		delay(10);
+		delay(5);
 	}
-	Serial.print("x");
 
 	// Now go in the other direction.  
 	for(int i = (NUM_LEDS)-1; i >= 0; i--) {
@@ -54,6 +52,6 @@ void loop() {
 		// leds[i] = CRGB::Black;
 		fadeall();
 		// Wait a little bit before we loop around and do it again
-		delay(10);
+		delay(5);
 	}
 }
