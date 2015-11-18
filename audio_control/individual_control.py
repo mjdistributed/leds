@@ -39,10 +39,13 @@ INPUT_BLOCK_TIME = 0.05
 INPUT_FRAMES_PER_BLOCK = int(RATE*INPUT_BLOCK_TIME)
 
 ### LED Serial Communication Constants
-NUM_LEDS = 200
+NUM_LEDS = 64
 port = '/dev/cu.usbmodemfa131'  # usb port left-bottom (away from screen)
 # port = '/dev/cu.usbmodemfd121' # usb port left-top (toward screen)
 ser = serial.Serial(port, 9600)
+
+# the internal serial buffer size of micro controller
+BUFFER_SIZE = 64
 
 MAX_BRIGHTNESS = 20
 
@@ -64,7 +67,7 @@ def normalize(collection, MAX_VALUE):
   # exit(-1)
   normalized = map(lambda x: (x - min_amplitude) / (max_amplitude - min_amplitude), collection)
   # exit(-1)
-  print("\nnormalized: " + str(normalized))
+  # print("\nnormalized: " + str(normalized))
   return map(lambda x: int(x * MAX_VALUE), normalized)
 
 def write_leds_brightness(amplitudes):
@@ -75,23 +78,17 @@ def write_leds_brightness(amplitudes):
   buckets = [0] * NUM_LEDS
   print("num buckets: " + str(len(buckets)))
   print("num amplitudes: " + str(len(amplitudes)))
-  # exit()
   freqs_per_bucket = int(math.ceil(len(amplitudes) * 1.0 / NUM_LEDS))
-  print(amplitudes)
   for i in range(len(amplitudes)):
     # truncate to find current bucket
     bucket_index = i / freqs_per_bucket
-    # print("bucket index: " + str(bucket_index))
-    # print(amplitudes[i])
     buckets[bucket_index] = amplitudes[i]
   buckets = normalize(buckets, MAX_BRIGHTNESS)
-  # print("normalized: " + str(buckets))
   print("\n\nwriting: " + str(buckets))
-  # exit()
   # write instructions to microcontroler
-  for i in range(NUM_LEDS):
-    ser.write(str(buckets[i]))
-    print("acknowledgement: " + str(ser.readline()))
+  # TODO: make it work when buffer size < num leds
+  ser.write(bytearray(buckets))
+  print("acknowledgement: " + str(ser.readline()))
 
 def write_leds_color():
   """ For use with serial_control.ino """
@@ -162,8 +159,8 @@ def main():
         # pl.xlabel("Frequency(Hz)")
         # pl.ylabel("Power(dB)")
         # pl.show()
-        print("Y: " + str(Y[:50]))
-        print("Y end: " + str(Y[len(Y) - 50:-1]))
+        # print("Y: " + str(Y[:50]))
+        # print("Y end: " + str(Y[len(Y) - 50:-1]))
         write_leds_brightness(Y)
 
         # print("power in low interval: " + str(get_avg_power_in_range(100, x_f, Y)))
