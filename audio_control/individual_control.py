@@ -28,8 +28,7 @@ import pylab as pl
 
 
 ### Audio Sampling Constants
-nFFT = 512
-# nFFT = 1024 # based on sound-spectrum_experimenting.py, doesn't seem to help
+nFFT = 512 # based on sound-spectrum_experimenting.py, increasing doesn't seem to help
 BUF_SIZE = 4 * nFFT
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
@@ -42,49 +41,54 @@ INPUT_FRAMES_PER_BLOCK = int(RATE*INPUT_BLOCK_TIME)
 NUM_LEDS = 64
 port = '/dev/cu.usbmodemfa131'  # usb port left-bottom (away from screen)
 # port = '/dev/cu.usbmodemfd121' # usb port left-top (toward screen)
-baud_rate = 1000000 #rate of serial read/write
+baud_rate = 2000000 #rate of serial read/write
 ser = serial.Serial(port, baud_rate)
 
 # the internal serial buffer size of micro controller
 BUFFER_SIZE = 64
 
 MAX_BRIGHTNESS = 20
+maxExpectedY = 20
 
 
-def normalize(collection, MAX_VALUE):
+def normalize(collection, MAX_VALUE, maxExpectedY):
   """ Normalizes all items in collection to be in [0, MAX_VALUE] """
+  """ maxExpectedY is maximum possible y value of input """
   """ assumes collection is linearly distributed """
 
-  max_amplitude = max(collection)
-  min_amplitude = min(collection)
-  new_collection = list()
-  for i in range(len(collection)):
-    item = (collection[i] - min_amplitude) / (max_amplitude - min_amplitude)
-    new_collection.append(item)
-  normalized = map(lambda x: (x - min_amplitude) / (max_amplitude - min_amplitude), collection)
+  # max_amplitude = max(collection)
+  # min_amplitude = min(collection)
+  # new_collection = list()
+  # for i in range(len(collection)):
+  #   item = collection[i] / maxExpectedY
+  #   new_collection.append(item)
+  normalized = map(lambda x: x / maxExpectedY if x < maxExpectedY else 1, collection)
   return map(lambda x: int(x * MAX_VALUE), normalized)
 
 def write_leds_brightness(amplitudes):
   """ Map amplitudes to brightness for each LED. """
   """ For use with serial_individual_brightness_control.ino """
-
+  
   # compress amplitudes to be NUM_LEDS wide
   buckets = [0] * NUM_LEDS
-  # print("amplitudes: " + str(amplitudes))
-  # print("num buckets: " + str(len(buckets)))
-  # print("num amplitudes: " + str(len(amplitudes)))
   freqs_per_bucket = int(math.ceil(len(amplitudes) * 1.0 / NUM_LEDS))
   for i in range(len(amplitudes)):
     # truncate to find current bucket
     bucket_index = i / freqs_per_bucket
     buckets[bucket_index] = buckets[bucket_index] + amplitudes[i]
   # print("summed buckets: " + str(buckets))
-  buckets = normalize(buckets, MAX_BRIGHTNESS)
+  # print("max bucket: " + str(max(buckets)))
+  global maxExpectedY
+  maxExpectedY = max(maxExpectedY, max(buckets))
+  buckets = normalize(buckets, MAX_BRIGHTNESS, maxExpectedY)
   # print("\n\nwriting: " + str(buckets))
   # write instructions to microcontroler
   # TODO: make it work when buffer size < num leds
-  ser.write(bytearray(buckets))
-  # print("acknowledgement: " + str(ser.readline()))
+  for i in range(NUM_LEDS / BUFFER_SIZE):
+    ser.write(bytearray(buckets[i * BUFFER_SIZE : (i + 1) * BUFFER_SIZE]))
+  # ser.write(bytearray(buckets))
+    # acknowledgement = ser.readline()
+    # print("acknowledgement: " + str(acknowledgement))
 
 def write_leds_color():
   """ For use with serial_control.ino """
@@ -134,11 +138,11 @@ def main():
 
   # Frequency range
   x_f = 1.0 * np.arange(0, nFFT / 2) / nFFT * RATE
-
+  
   # Used for normalizing signal. If use paFloat32, then it's already -1..1.
   # Because of saving wave, paInt16 will be easier.
   MAX_y = 2.0**(p.get_sample_size(FORMAT) * 8 - 1)
-  
+
   try:
     while(True):
       try:

@@ -32,7 +32,7 @@ uint16_t mid = 0;
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(1000000);
   uint16_t midpoint = ledCount / 2;
   for(uint16_t i = 0; i < midpoint; i ++ ) {
     leds[i] = hsvToRgb(i * (360/midpoint), 255, 255);

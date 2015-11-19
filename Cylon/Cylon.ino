@@ -13,7 +13,7 @@
 CRGB leds[NUM_LEDS];
 
 void setup() { 
-  Serial.begin(9600);
+  Serial.begin(1000000);
 	FastLED.addLeds<CHIPSET, DATA_PIN, CLOCK_PIN, COLOR_ORDER>(leds, NUM_LEDS);
 	LEDS.setBrightness(84);
 }

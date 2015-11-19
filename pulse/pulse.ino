@@ -39,7 +39,7 @@ boolean decreasing = true;
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(1000000);
   for(uint16_t i = 0; i < ledCount; i++) {
     leds[i] = color;
   }

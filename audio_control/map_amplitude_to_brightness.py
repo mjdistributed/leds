@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# open a microphone in pyAudio and listen for taps
+# for use with any .ino file that uses brightness_control()
 
 import pyaudio
 import struct
@@ -30,7 +30,7 @@ MIN_BRIGHTNESS = 1
 MAX_BRIGHTNESS = 20
 
 port = '/dev/cu.usbmodemfa131'  # usb port left-bottom (away from screen)
-ser = serial.Serial(port, 9600)
+ser = serial.Serial(port, 1000000)
 
 # port = '/dev/cu.usbmodemfd121' # usb port left-top (toward screen)
 

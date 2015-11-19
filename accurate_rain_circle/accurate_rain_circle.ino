@@ -39,7 +39,7 @@ float leds_per_degree = greatest_degree * 1.0 / circle_width;
 
 void setup()
 {
-  Serial.begin(9600); 
+  Serial.begin(1000000); 
 }
 
 // Converts a color from HSV to RGB.

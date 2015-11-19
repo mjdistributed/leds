@@ -35,7 +35,7 @@ uint16_t hue;
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(1000000);
 }
 
 // Converts a color from HSV to RGB.

@@ -34,7 +34,7 @@ uint8_t rate_of_change = 1;
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(1000000);
 }
 
 // Converts a color from HSV to RGB.
