@@ -40,7 +40,7 @@ rgb_color rgb;
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(1000000);
   for(int i = 0; i < num_chasers; i++) {
     on_leds[i] = i * ledCount / (num_chasers);
     for(int j = 0; j < chaser_width && on_leds[i] + j < ledCount; j++) {
