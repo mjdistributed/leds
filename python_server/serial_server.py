@@ -6,14 +6,20 @@ import SimpleHTTPServer
 import SocketServer
 import os
 import cgi
+import socket
 
 from rgb_to_hsv import rgbToHsv, scaleHue
 import page_builder as pb
+from BaseHTTPServer import HTTPServer
+
 
 port = '/dev/cu.usbmodemfa131'  # usb port left-bottom (away from screen)
 # port = '/dev/cu.usbmodemfd121' # usb port left-top (toward screen)
 
-ser = serial.Serial(port, 9600)
+try:
+	ser = serial.Serial(port, 9600)
+except:
+	print("error connecting to USB port!")
 
 
 def get_rgb_from_hex(hex_color):
@@ -98,6 +104,9 @@ class CustomHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 		except IOError:
 		  self.send_error(404, 'file not found')
+
+class HTTPServerV6(HTTPServer):
+  address_family = socket.AF_INET6
 	  
 def run():
   	print('http server is starting...')
@@ -106,7 +115,8 @@ def run():
   	#ip and port of servr <- IP set dynamically
   	#by default http server port is 80
   	server_address = ('', 8080)
-  	httpd = SocketServer.TCPServer(server_address, CustomHTTPRequestHandler)
+  	httpd = HTTPServerV6(server_address, CustomHTTPRequestHandler)
+  	# httpd = SocketServer.TCPServer(server_address, CustomHTTPRequestHandler)
   	print('http server is running...')
 	try:
   		httpd.serve_forever()
